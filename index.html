@@ -12,7 +12,6 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhycXJvZWt3aWZqdnNkcnlraXZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDA0OTEsImV4cCI6MjA4MDQxNjQ5MX0.RX-_u5tDJkcF5LCsIXUlWxE8TOWnieOvlWFgLvyWViE"
     );
 
-    // Set the bucket name (all lowercase)
     const BUCKET_NAME = "uploads";
 
     // Get guest name from URL query parameter ?guest=
@@ -49,15 +48,52 @@
 
       alert(msg);
       document.getElementById("photos").value = "";
+
+      // Refresh the uploaded files list
+      listUploadedFiles();
+    }
+
+    // List uploaded files for this guest
+    async function listUploadedFiles() {
+      const { data, error } = await supabase.storage.from(BUCKET_NAME).list(guestName);
+
+      const container = document.getElementById("uploaded-files");
+      container.innerHTML = ""; // clear previous list
+
+      if (error) {
+        container.innerHTML = `<p style="color:red;">Error loading files: ${error.message}</p>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        container.innerHTML = "<p>No files uploaded yet.</p>";
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      data.forEach(file => {
+        const li = document.createElement("li");
+        const date = new Date(Number(file.name.split('-')[0])); // timestamp from file name
+        li.textContent = `${file.name.replace(`${file.name.split('-')[0]}-`, '')} — uploaded by ${guestName} on ${date.toLocaleString()}`;
+        ul.appendChild(li);
+      });
+
+      container.appendChild(ul);
     }
 
     window.uploadFiles = uploadFiles;
+
+    // Run on page load
+    window.addEventListener("load", () => {
+      document.getElementById('guest-name').textContent = guestName;
+      listUploadedFiles();
+    });
   </script>
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 500px;
+      max-width: 600px;
       margin: 40px auto;
       text-align: center;
     }
@@ -70,6 +106,10 @@
     input[type=file] {
       margin-top: 20px;
     }
+    #uploaded-files {
+      margin-top: 30px;
+      text-align: left;
+    }
   </style>
 </head>
 
@@ -81,8 +121,8 @@
   <br>
   <button onclick="uploadFiles()">Upload</button>
 
-  <script>
-    document.getElementById('guest-name').textContent = guestName;
-  </script>
+  <div id="uploaded-files">
+    <p>Loading uploaded files...</p>
+  </div>
 </body>
 </html>
