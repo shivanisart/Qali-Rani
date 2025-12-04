@@ -1,46 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Upload Photos</title>
+  <meta charset="UTF-8" />
+  <title>Upload Your Photos</title>
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
+    // Supabase connection
     const supabase = createClient(
       "https://xrqroekwifjvsdrykivw.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhycXJvZWt3aWZqdnNkcnlraXZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDA0OTEsImV4cCI6MjA4MDQxNjQ5MX0.RX-_u5tDJkcF5LCsIXUlWxE8TOWnieOvlWFgLvyWViE
-
-
-
-"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhycXJvZWt3aWZqdnNkcnlraXZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDA0OTEsImV4cCI6MjA4MDQxNjQ5MX0.RX-_u5tDJkcF5LCsIXUlWxE8TOWnieOvlWFgLvyWViE"
     );
+
+    // Get guest name from URL query parameter ?guest=
+    const urlParams = new URLSearchParams(window.location.search);
+    let guestName = urlParams.get('guest') || 'Unknown';
+
+    // Capitalize first letters
+    guestName = guestName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
     async function uploadFiles() {
       const files = document.getElementById("photos").files;
       if (!files.length) {
-        alert("Choose photos first!");
+        alert("Please choose photos first!");
         return;
       }
 
       for (let file of files) {
-        const filePath = `uploads/${Date.now()}-${file.name}`;
-        const { error } = await supabase.storage
-          .from("uploads")
-          .upload(filePath, file);
-
-        if (error) console.error(error);
+        const filePath = `uploads/${guestName}/${Date.now()}-${file.name}`;
+        const { error } = await supabase.storage.from("uploads").upload(filePath, file);
+        if (error) {
+          console.error(error);
+          alert("Upload failed for: " + file.name);
+        }
       }
 
-      alert("Uploaded!");
+      alert("Upload complete!");
+      document.getElementById("photos").value = "";
     }
 
     window.uploadFiles = uploadFiles;
   </script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 40px auto;
+      text-align: center;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+    input[type=file] {
+      margin-top: 20px;
+    }
+  </style>
 </head>
 
 <body>
-  <h2>Upload Your Wedding Photos</h2>
+  <h2>Upload Your Photos</h2>
+  <p>Hello <strong><span id="guest-name"></span></strong>! Select one or more photos to upload.</p>
+
   <input type="file" id="photos" accept="image/*" multiple>
+  <br>
   <button onclick="uploadFiles()">Upload</button>
+
+  <script>
+    document.getElementById('guest-name').textContent = guestName;
+  </script>
 </body>
 </html>
