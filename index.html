@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Upload Your Photos</title>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+    const supabase = createClient(
+      "https://xrqroekwifjvsdrykivw.supabase.co",
+      "YOUR_ANON_PUBLIC_KEY_HERE" // replace with your current anon key
+    );
+
+    const BUCKET_NAME = "uploads";
+
+    async function uploadFiles() {
+      const files = document.getElementById("photos").files;
+      if (!files.length) {
+        alert("Please choose photos first!");
+        return;
+      }
+
+      let successCount = 0;
+      let failMessages = [];
+
+      const guestName = document.getElementById("guest-input").value.trim() || "Unknown";
+
+      for (let file of files) {
+        const filePath = `${guestName}/${Date.now()}-${file.name}`;
+        const { data, error } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file);
+
+        if (error) {
+          console.error("Upload error:", error);
+          failMessages.push(`${file.name}: ${error.message}`);
+        } else {
+          successCount++;
+        }
+      }
+
+      let msg = `Upload complete! ${successCount} file(s) uploaded successfully.`;
+      if (failMessages.length > 0) {
+        msg += "\n\nFailed files:\n" + failMessages.join("\n");
+      }
+
+      alert(msg);
+      document.getElementById("photos").value = "";
+
+      listUploadedFiles();
+    }
+
+    async function listUploadedFiles() {
+      const { data, error } = await supabase.storage.from(BUCKET_NAME).list('', { limit: 100 });
+
+      const container = document.getElementById("uploaded-files");
+      container.innerHTML = "";
+
+      if (error) {
+        container.innerHTML = `<p style="color:red;">Error loading files: ${error.message}</p>`;
+        console.error("List error:", error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        container.innerHTML = "<p>No files uploaded yet.</p>";
+        return;
+      }
+
+      const ul = document.createElement("ul");
+
+      data.forEach(file => {
+        // file.name may be 'Guest Name/timestamp-filename.jpg'
+        const pathParts = file.name.split('/');
+        const guest = pathParts[0];
+        const timestampStr = pathParts[1].split('-')[0];
+        const dateStr = !isNaN(Number(timestampStr)) ? new Date(Number(timestampStr)).toLocaleString() : "";
+
+        const { publicURL } = supabase.storage.from(BUCKET_NAME).getPublicUrl(file.name);
+
+        const li = document.createElement("li");
+        li.style.marginBottom = "20px";
+
+        li.innerHTML = `
+          Uploaded by: <strong>${guest}</strong><br>
+          Date & Time: ${dateStr}<br>
+          <a href="${publicURL}" target="_blank">
+            <img src="${publicURL}" alt="Photo" style="max-width:150px; max-height:150px; margin-top:5px; border:1px solid #ccc; border-radius:5px;">
+          </a>
+        `;
+
+        ul.appendChild(li);
+      });
+
+      container.appendChild(ul);
+    }
+
+    window.uploadFiles = uploadFiles;
+
+    window.addEventListener("load", () => {
+      listUploadedFiles();
+    });
+  </script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 650px;
+      margin: 40px auto;
+      text-align: center;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+    input[type=file], input[type=text] {
+      margin-top: 20px;
+      width: 90%;
+      padding: 8px;
+      font-size: 16px;
+    }
+    #uploaded-files {
+      margin-top: 30px;
+      text-align: left;
+    }
+    #uploaded-files img {
+      display: block;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Upload Your Photos</h2>
+  <p>Enter your name and select one or more photos to upload.</p>
+  <input type="text" id="guest-input" placeholder="Your Name" />
+  <br>
+  <input type="file" id="photos" accept="image/*" multiple>
+  <br>
+  <button onclick="uploadFiles()">Upload</button>
+
+  <div id="uploaded-files">
+    <p>Loading uploaded files...</p>
+  </div>
+</body>
+</html>
