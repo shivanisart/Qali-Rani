@@ -28,9 +28,8 @@
       let failMessages = [];
 
       for (let file of files) {
-        // Upload to "file" bucket with guest folder
         const filePath = `${guestName}/${Date.now()}-${file.name}`;
-        const { data, error } = await supabase.storage.from("file").upload(filePath, file);
+        const { data, error } = await supabase.storage.from("uploads").upload(filePath, file);
 
         if (error) {
           console.error("Upload error:", error);
