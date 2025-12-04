@@ -147,11 +147,6 @@
         const li = document.createElement("li");
         li.style.marginBottom = "20px";
 
-        // Only show delete button for files uploaded by current user
-        const deleteButton = file.guestFolder === guestName 
-          ? `<button class="delete-btn" onclick="deleteFile('${fullPath}', '${file.guestFolder}')">Delete</button>`
-          : '';
-
         li.innerHTML = `
           Uploaded by: ${file.guestFolder}<br>
           Date & Time: ${dateStr}<br>
@@ -159,8 +154,17 @@
             <img src="${urlData.publicUrl}" alt="Photo" style="max-width:150px; max-height:150px; margin-top:5px; border:1px solid #ccc; border-radius:5px;">
           </a>
           <br>
-          ${deleteButton}
         `;
+
+        // Only show delete button for files uploaded by current user
+        if (file.guestFolder === guestName) {
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "delete-btn";
+          deleteBtn.textContent = "Delete";
+          deleteBtn.style.marginTop = "8px";
+          deleteBtn.onclick = () => deleteFile(fullPath, file.guestFolder);
+          li.appendChild(deleteBtn);
+        }
 
         ul.appendChild(li);
       });
@@ -169,7 +173,6 @@
     }
 
     window.uploadFiles = uploadFiles;
-    window.deleteFile = deleteFile;
 
     window.addEventListener("load", () => {
       document.getElementById('guest-name').textContent = guestName;
@@ -215,7 +218,6 @@
       border: none;
       padding: 8px 15px;
       font-size: 14px;
-      margin-top: 8px;
       cursor: pointer;
       border-radius: 4px;
     }
