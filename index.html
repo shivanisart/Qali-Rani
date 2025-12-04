@@ -15,8 +15,6 @@
     // Get guest name from URL query parameter ?guest=
     const urlParams = new URLSearchParams(window.location.search);
     let guestName = urlParams.get('guest') || 'Unknown';
-
-    // Capitalize first letters
     guestName = guestName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
     async function uploadFiles() {
@@ -26,16 +24,28 @@
         return;
       }
 
+      let successCount = 0;
+      let failMessages = [];
+
       for (let file of files) {
-        const filePath = `uploads/${guestName}/${Date.now()}-${file.name}`;
-        const { error } = await supabase.storage.from("uploads").upload(filePath, file);
+        // Upload to "file" bucket with guest folder
+        const filePath = `${guestName}/${Date.now()}-${file.name}`;
+        const { data, error } = await supabase.storage.from("file").upload(filePath, file);
+
         if (error) {
-          console.error(error);
-          alert("Upload failed for: " + file.name);
+          console.error("Upload error:", error);
+          failMessages.push(`${file.name}: ${error.message}`);
+        } else {
+          successCount++;
         }
       }
 
-      alert("Upload complete!");
+      let msg = `Upload complete! ${successCount} file(s) uploaded successfully.`;
+      if (failMessages.length > 0) {
+        msg += "\n\nFailed files:\n" + failMessages.join("\n");
+      }
+
+      alert(msg);
       document.getElementById("photos").value = "";
     }
 
