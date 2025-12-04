@@ -6,10 +6,9 @@
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
-    // Supabase connection
     const supabase = createClient(
       "https://xrqroekwifjvsdrykivw.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhycXJvZWt3aWZqdnNkcnlraXZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDA0OTEsImV4cCI6MjA4MDQxNjQ5MX0.RX-_u5tDJkcF5LCsIXUlWxE8TOWnieOvlWFgLvyWViE"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhycXJvZWt3aWZqdnNkcnlraXZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4MDA0OTEsImV4cCI6MjA4MDQxNjQ5MX0.RX-_u5tDJkcF5LCsIXUlWxE8TOWnieOvlWFgLvyWViE"
     );
 
     const BUCKET_NAME = "uploads";
@@ -49,18 +48,17 @@
       alert(msg);
       document.getElementById("photos").value = "";
 
-      // Refresh the uploaded files list
+      // Refresh uploaded files list
       listUploadedFiles();
     }
 
-    // List uploaded files for this guest
     async function listUploadedFiles() {
       const { data, error } = await supabase.storage
         .from(BUCKET_NAME)
-        .list(guestName, { limit: 100 });
+        .list('', { limit: 100, search: guestName });
 
       const container = document.getElementById("uploaded-files");
-      container.innerHTML = ""; // clear previous list
+      container.innerHTML = "";
 
       if (error) {
         container.innerHTML = `<p style="color:red;">Error loading files: ${error.message}</p>`;
@@ -74,11 +72,29 @@
 
       const ul = document.createElement("ul");
       data.forEach(file => {
+        const { publicURL } = supabase.storage.from(BUCKET_NAME).getPublicUrl(file.name);
+        const fileName = file.name.split('/').pop();
+
+        // Parse timestamp from filename if present
+        let timestamp = fileName.split('-')[0];
+        let dateStr = '';
+        if (!isNaN(Number(timestamp))) {
+          const date = new Date(Number(timestamp));
+          dateStr = date.toLocaleString();
+        }
+
         const li = document.createElement("li");
-        // Generate public URL for the file
-        const { publicURL } = supabase.storage.from(BUCKET_NAME).getPublicUrl(`${guestName}/${file.name}`);
-        const date = new Date(Number(file.name.split('-')[0])).toLocaleString(); // timestamp from filename
-        li.innerHTML = `<a href="${publicURL}" target="_blank">${file.name.replace(`${file.name.split('-')[0]}-`, '')}</a> — uploaded by ${guestName} on ${date}`;
+        li.style.marginBottom = "20px";
+
+        li.innerHTML = `
+          <strong>${fileName.replace(`${timestamp}-`, '')}</strong><br>
+          Uploaded by: ${guestName}<br>
+          Date & Time: ${dateStr}<br>
+          <a href="${publicURL}" target="_blank">
+            <img src="${publicURL}" alt="${fileName}" style="max-width:150px; max-height:150px; margin-top:5px; border:1px solid #ccc; border-radius:5px;">
+          </a>
+        `;
+
         ul.appendChild(li);
       });
 
@@ -87,7 +103,6 @@
 
     window.uploadFiles = uploadFiles;
 
-    // Run on page load
     window.addEventListener("load", () => {
       document.getElementById('guest-name').textContent = guestName;
       listUploadedFiles();
@@ -97,7 +112,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
+      max-width: 650px;
       margin: 40px auto;
       text-align: center;
     }
@@ -114,12 +129,8 @@
       margin-top: 30px;
       text-align: left;
     }
-    #uploaded-files a {
-      text-decoration: none;
-      color: #007bff;
-    }
-    #uploaded-files a:hover {
-      text-decoration: underline;
+    #uploaded-files img {
+      display: block;
     }
   </style>
 </head>
