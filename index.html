@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Upload Your Photos</title>
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js";
+
+    const supabase = createClient(
+      "https://xrqroekwifjvsdrykivw.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhycXJvZWt3aWZqdnNkcnlraXZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDA0OTEsImV4cCI6MjA4MDQxNjQ5MX0.RX-_u5tDJkcF5LCsIXUlWxE8TOWnieOvlWFgLvyWViE"
+    );
+
+    const BUCKET_NAME = "uploads";
+
+    // Get guest name from URL query parameter ?guest=
+    const urlParams = new URLSearchParams(window.location.search);
+    let guestName = urlParams.get('guest') || 'Unknown';
+    guestName = guestName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+    async function uploadFiles() {
+      const files = document.getElementById("photos").files;
+      if (!files.length) {
+        alert("Please choose photos first!");
+        return;
+      }
+
+      let successCount = 0;
+      let failMessages = [];
+
+      for (let file of files) {
+        const filePath = `${guestName}/${Date.now()}-${file.name}`;
+        const { data, error } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file);
+
+        if (error) {
+          console.error("Upload error:", error);
+          failMessages.push(`${file.name}: ${error.message}`);
+        } else {
+          successCount++;
+        }
+      }
+
+      let msg = `Upload complete! ${successCount} file(s) uploaded successfully.`;
+      if (failMessages.length > 0) {
+        msg += "\n\nFailed files:\n" + failMessages.join("\n");
+      }
+
+      alert(msg);
+      document.getElementById("photos").value = "";
+
+      // Refresh uploaded files list
+      listUploadedFiles();
+    }
+
+    async function listUploadedFiles() {
+      // List ALL files in the bucket (get all guest folders first)
+      const { data, error } = await supabase.storage
+        .from(BUCKET_NAME)
+        .list('', { limit: 1000, sortBy: { column: 'created_at', order: 'desc' } });
+
+      const container = document.getElementById("uploaded-files");
+      container.innerHTML = "<p>Loading all uploaded files...</p>";
+
+      if (error) {
+        container.innerHTML = `<p style="color:red;">Error loading files: ${error.message}</p>`;
+        console.error("List error:", error);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        container.innerHTML = "<p>No files uploaded yet.</p>";
+        return;
+      }
+
+      // Get all guest folders (folders have id === null in the list response)
+      const folders = data.filter(item => item.id === null);
+      
+      let allFiles = [];
+      
+      // Fetch files from each guest folder
+      for (const folder of folders) {
+        const { data: files, error: filesError } = await supabase.storage
+          .from(BUCKET_NAME)
+          .list(folder.name, { limit: 100 });
+        
+        if (!filesError && files) {
+          files.forEach(file => {
+            allFiles.push({ ...file, guestFolder: folder.name });
+          });
+        }
+      }
+
+      if (allFiles.length === 0) {
+        container.innerHTML = "<p>No files uploaded yet.</p>";
+        return;
+      }
+
+      // Sort all files by timestamp (newest first)
+      allFiles.sort((a, b) => {
+        const timestampA = parseInt(a.name.split('-')[0]) || 0;
+        const timestampB = parseInt(b.name.split('-')[0]) || 0;
+        return timestampB - timestampA;
+      });
+
+      container.innerHTML = "<h3>All Uploaded Photos</h3>";
+      const ul = document.createElement("ul");
+      
+      allFiles.forEach(file => {
+        // Use the full path to get public URL
+        const fullPath = `${file.guestFolder}/${file.name}`;
+        const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(fullPath);
+
+        const fileName = file.name;
+
+        // Parse timestamp from filename if present
+        let timestamp = fileName.split('-')[0];
+        let dateStr = '';
+        if (!isNaN(Number(timestamp))) {
+          const date = new Date(Number(timestamp));
+          dateStr = date.toLocaleString();
+        }
+
+        const li = document.createElement("li");
+        li.style.marginBottom = "20px";
+
+        li.innerHTML = `
+          <strong>${fileName.replace(`${timestamp}-`, '')}</strong><br>
+          Uploaded by: ${file.guestFolder}<br>
+          Date & Time: ${dateStr}<br>
+          <a href="${urlData.publicUrl}" target="_blank">
+            <img src="${urlData.publicUrl}" alt="${fileName}" style="max-width:150px; max-height:150px; margin-top:5px; border:1px solid #ccc; border-radius:5px;">
+          </a>
+        `;
+
+        ul.appendChild(li);
+      });
+
+      container.appendChild(ul);
+    }
+
+    window.uploadFiles = uploadFiles;
+
+    window.addEventListener("load", () => {
+      document.getElementById('guest-name').textContent = guestName;
+      listUploadedFiles();
+    });
+  </script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 650px;
+      margin: 40px auto;
+      text-align: center;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+    input[type=file] {
+      margin-top: 20px;
+    }
+    #uploaded-files {
+      margin-top: 30px;
+      text-align: left;
+    }
+    #uploaded-files img {
+      display: block;
+    }
+    #uploaded-files ul {
+      list-style: none;
+      padding: 0;
+    }
+    #uploaded-files li {
+      padding: 10px;
+      background: #f9f9f9;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Upload Your Photos</h2>
+  <p>Hello <strong><span id="guest-name"></span></strong>! Select one or more photos to upload.</p>
+
+  <input type="file" id="photos" accept="image/*" multiple>
+  <br>
+  <button onclick="uploadFiles()">Upload</button>
+
+  <div id="uploaded-files">
+    <p>Loading uploaded files...</p>
+  </div>
+</body>
+</html>
