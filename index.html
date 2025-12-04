@@ -55,7 +55,9 @@
 
     // List uploaded files for this guest
     async function listUploadedFiles() {
-      const { data, error } = await supabase.storage.from(BUCKET_NAME).list(guestName);
+      const { data, error } = await supabase.storage
+        .from(BUCKET_NAME)
+        .list(guestName, { limit: 100 });
 
       const container = document.getElementById("uploaded-files");
       container.innerHTML = ""; // clear previous list
@@ -73,8 +75,10 @@
       const ul = document.createElement("ul");
       data.forEach(file => {
         const li = document.createElement("li");
-        const date = new Date(Number(file.name.split('-')[0])); // timestamp from file name
-        li.textContent = `${file.name.replace(`${file.name.split('-')[0]}-`, '')} — uploaded by ${guestName} on ${date.toLocaleString()}`;
+        // Generate public URL for the file
+        const { publicURL } = supabase.storage.from(BUCKET_NAME).getPublicUrl(`${guestName}/${file.name}`);
+        const date = new Date(Number(file.name.split('-')[0])).toLocaleString(); // timestamp from filename
+        li.innerHTML = `<a href="${publicURL}" target="_blank">${file.name.replace(`${file.name.split('-')[0]}-`, '')}</a> — uploaded by ${guestName} on ${date}`;
         ul.appendChild(li);
       });
 
@@ -109,6 +113,13 @@
     #uploaded-files {
       margin-top: 30px;
       text-align: left;
+    }
+    #uploaded-files a {
+      text-decoration: none;
+      color: #007bff;
+    }
+    #uploaded-files a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
