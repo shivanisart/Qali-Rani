@@ -2,24 +2,22 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-  <title>Upload Your Photos</title>
+  <title>Upload and View Photos</title>
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js";
 
+    // Supabase connection
     const supabase = createClient(
       "https://xrqroekwifjvsdrykivw.supabase.co",
-
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhycXJvZWt3aWZqdnNkcnlraXZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDA0OTEsImV4cCI6MjA4MDQxNjQ5MX0.RX-_u5tDJkcF5LCsIXUlWxE8TOWnieOvlWFgLvyWViE" 
-    
-
+      "PASTE_YOUR_ANON_PUBLIC_KEY_HERE"
     );
 
     const BUCKET_NAME = "uploads";
 
-    // Get guest name from URL query parameter ?guest=
+    // Get current guest from URL ?guest=
     const urlParams = new URLSearchParams(window.location.search);
-    let guestName = urlParams.get('guest') || 'Unknown';
-    guestName = guestName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    let currentGuest = urlParams.get('guest') || 'Unknown';
+    currentGuest = currentGuest.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
     async function uploadFiles() {
       const files = document.getElementById("photos").files;
@@ -32,7 +30,7 @@
       let failMessages = [];
 
       for (let file of files) {
-        const filePath = `${guestName}/${Date.now()}-${file.name}`;
+        const filePath = `${currentGuest}/${Date.now()}-${file.name}`;
         const { data, error } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file);
 
         if (error) {
@@ -43,111 +41,111 @@
         }
       }
 
-      let msg = `Upload complete! ${successCount} file(s) uploaded successfully.`;
-      if (failMessages.length > 0) {
-        msg += "\n\nFailed files:\n" + failMessages.join("\n");
-      }
-
-      alert(msg);
+      alert(`Upload complete! ${successCount} file(s) uploaded.`);
       document.getElementById("photos").value = "";
-
-      // Refresh uploaded files list
       listUploadedFiles();
     }
 
-    async function listUploadedFiles() {
-      const { data, error } = await supabase.storage
-        .from(BUCKET_NAME)
-        .list('', { limit: 100, search: guestName });
+    async function deleteFile(filePath) {
+      if (!confirm("Are you sure you want to delete this file?")) return;
+      const { error } = await supabase.storage.from(BUCKET_NAME).remove([filePath]);
+      if (error) {
+        alert('Error deleting file: ' + error.message);
+      } else {
+        alert('File deleted!');
+        listUploadedFiles();
+      }
+    }
 
-      const container = document.getElementById("uploaded-files");
-      container.innerHTML = "";
+    async function listUploadedFiles() {
+      const { data, error } = await supabase.storage.from(BUCKET_NAME).list('', { limit: 1000 });
+      const container = document.getElementById('file-list');
+      container.innerHTML = '';
 
       if (error) {
-        container.innerHTML = `<p style="color:red;">Error loading files: ${error.message}</p>`;
+        console.error('Error listing files:', error);
+        container.textContent = 'Error loading files.';
         return;
       }
 
       if (!data || data.length === 0) {
-        container.innerHTML = "<p>No files uploaded yet.</p>";
+        container.textContent = 'No files uploaded yet.';
         return;
       }
 
-      const ul = document.createElement("ul");
-      data.forEach(file => {
-        const { publicURL } = supabase.storage.from(BUCKET_NAME).getPublicUrl(file.name);
-        const fileName = file.name.split('/').pop();
+      for (let file of data) {
+        const filePath = file.name; // full path: GuestName/timestamp-filename
+        const [guestFolder, fileName] = filePath.split('/');
+        const timestamp = Number(fileName.split('-')[0]);
+        const date = new Date(timestamp).toLocaleString();
 
-        // Parse timestamp from filename if present
-        let timestamp = fileName.split('-')[0];
-        let dateStr = '';
-        if (!isNaN(Number(timestamp))) {
-          const date = new Date(Number(timestamp));
-          dateStr = date.toLocaleString();
-        }
+        const { publicURL } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
 
-        const li = document.createElement("li");
-        li.style.marginBottom = "20px";
+        const div = document.createElement('div');
+        div.className = 'file-item';
 
-        li.innerHTML = `
-          <strong>${fileName.replace(`${timestamp}-`, '')}</strong><br>
-          Uploaded by: ${guestName}<br>
-          Date & Time: ${dateStr}<br>
-          <a href="${publicURL}" target="_blank">
-            <img src="${publicURL}" alt="${fileName}" style="max-width:150px; max-height:150px; margin-top:5px; border:1px solid #ccc; border-radius:5px;">
-          </a>
+        div.innerHTML = `
+          <img src="${publicURL}" alt="Photo" width="150" />
+          <p>Uploaded by: ${guestFolder}</p>
+          <p>Date: ${date}</p>
         `;
 
-        ul.appendChild(li);
-      });
+        // Show delete button only if current guest matches
+        if (guestFolder === currentGuest) {
+          const btn = document.createElement('button');
+          btn.textContent = 'Delete';
+          btn.onclick = () => deleteFile(filePath);
+          div.appendChild(btn);
+        }
 
-      container.appendChild(ul);
+        container.appendChild(div);
+      }
     }
 
     window.uploadFiles = uploadFiles;
+    window.listUploadedFiles = listUploadedFiles;
 
-    window.addEventListener("load", () => {
-      document.getElementById('guest-name').textContent = guestName;
+    // Initialize
+    window.onload = () => {
+      document.getElementById('guest-name').textContent = currentGuest;
       listUploadedFiles();
-    });
+    };
   </script>
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 650px;
+      max-width: 600px;
       margin: 40px auto;
       text-align: center;
     }
     button {
-      padding: 12px 20px;
-      font-size: 16px;
-      margin-top: 15px;
+      padding: 8px 12px;
+      font-size: 14px;
+      margin-top: 5px;
       cursor: pointer;
     }
     input[type=file] {
       margin-top: 20px;
     }
-    #uploaded-files {
-      margin-top: 30px;
-      text-align: left;
-    }
-    #uploaded-files img {
-      display: block;
+    .file-item {
+      display: inline-block;
+      margin: 10px;
+      border: 1px solid #ccc;
+      padding: 5px;
+      text-align: center;
     }
   </style>
 </head>
 
 <body>
-  <h2>Upload Your Photos</h2>
+  <h2>Upload and View Photos</h2>
   <p>Hello <strong><span id="guest-name"></span></strong>! Select one or more photos to upload.</p>
-
   <input type="file" id="photos" accept="image/*" multiple>
   <br>
   <button onclick="uploadFiles()">Upload</button>
 
-  <div id="uploaded-files">
-    <p>Loading uploaded files...</p>
-  </div>
+  <h3>Uploaded Photos</h3>
+  <div id="file-list"></div>
 </body>
 </html>
