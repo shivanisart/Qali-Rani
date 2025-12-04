@@ -12,6 +12,9 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhycXJvZWt3aWZqdnNkcnlraXZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ4NDA0OTEsImV4cCI6MjA4MDQxNjQ5MX0.RX-_u5tDJkcF5LCsIXUlWxE8TOWnieOvlWFgLvyWViE"
     );
 
+    // Set the bucket name (all lowercase)
+    const BUCKET_NAME = "uploads";
+
     // Get guest name from URL query parameter ?guest=
     const urlParams = new URLSearchParams(window.location.search);
     let guestName = urlParams.get('guest') || 'Unknown';
@@ -29,7 +32,7 @@
 
       for (let file of files) {
         const filePath = `${guestName}/${Date.now()}-${file.name}`;
-        const { data, error } = await supabase.storage.from("uploads").upload(filePath, file);
+        const { data, error } = await supabase.storage.from(BUCKET_NAME).upload(filePath, file);
 
         if (error) {
           console.error("Upload error:", error);
