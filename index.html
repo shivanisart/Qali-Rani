@@ -146,6 +146,13 @@
       transition: width 0.3s ease;
     }
 
+
+   footer {
+  margin-top: 40px;
+  padding: 20px 0;
+  border-top: 2px solid #666;
+}
+ 
     .storage-fill.warning {
       background-color: #ff9800;
     }
@@ -476,17 +483,10 @@
   </script>
 </head>
 
-<body>
+
+ <body>
   <h2>Upload Your Photos</h2>
   <p>Hello <strong><span id="guest-name"></span></strong>! Select one or more photos to upload.</p>
-
-  <div class="storage-indicator">
-    <div class="storage-text">Calculating storage...</div>
-    <div class="storage-bar">
-      <div class="storage-fill" style="width: 0%"></div>
-    </div>
-    <div class="compression-info">Photos are automatically compressed to save space</div>
-  </div>
 
   <div class="upload-controls">
     <div class="file-input-wrapper">
@@ -499,5 +499,17 @@
   <div id="uploaded-files">
     <p>Loading uploaded files...</p>
   </div>
+
+  <footer>
+    <div class="storage-indicator">
+      <div class="storage-text">Calculating storage...</div>
+      <div class="storage-bar">
+        <div class="storage-fill" style="width: 0%"></div>
+      </div>
+      <div class="compression-info">Photos are automatically compressed to save space</div>
+    </div>
+  </footer>
 </body>
+ 
+  
 </html>
