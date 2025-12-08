@@ -5,30 +5,21 @@
   <title>Qali Rani Photo Gallery</title>
 
   <style>
-    /* 🎨 Styling for a Dark/Themed Look */
+    /* 🎨 Styling for a Dark/Themed Look (Minor adjustments for icons) */
     body {
       font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
-      background-color: #333; /* Darker background */
+      background-color: #333;
       margin: 0;
       font-size: 18px;
-      color: #ccc; /* Light gray text */
+      color: #ccc;
       padding: 0;
-      max-width: 700px; /* Slightly wider */
+      max-width: 700px;
       margin: 40px auto;
       text-align: center;
     }
 
-    /* Style header and footer */
-    header {
-      background-color: #4c4c4c;
-      color: #929292;
-      text-align: center;
-      padding: 10px;
-      font-size: 16px;
-    }
-
     h2 {
-        color: #f7a83d; /* Highlighted color for the main title */
+        color: #f7a83d;
         font-size: 36px;
         margin-bottom: 5px;
     }
@@ -44,7 +35,7 @@
       gap: 10px;
       margin-top: 20px;
       padding: 20px;
-      background-color: #4c4c4c; /* Controls background */
+      background-color: #4c4c4c;
       border-radius: 8px;
     }
     
@@ -60,13 +51,13 @@
       left: -9999px;
     }
     
-    /* MODIFIED: Choose Files Button Color */
+    /* Choose Files Button Color */
     .file-input-label {
       display: block;
       padding: 12px 20px;
       font-size: 16px;
-      background-color: #6a6a6a; /* Changed from yellow to gray */
-      color: white; /* White text for contrast */
+      background-color: #6a6a6a;
+      color: white;
       border: 1px solid #777;
       border-radius: 4px;
       cursor: pointer;
@@ -77,7 +68,7 @@
     }
     
     .file-input-label:hover {
-      background-color: #555; /* Darker gray on hover */
+      background-color: #555;
     }
     
     button {
@@ -96,7 +87,7 @@
         background-color: #555;
     }
 
-    /* NEW Filter Styles */
+    /* Filter Styles */
     .filter-controls {
         margin: 25px 0;
         padding: 15px;
@@ -115,7 +106,6 @@
         color: white;
         border: 1px solid #777;
     }
-    /* End NEW Filter Styles */
     
     #uploaded-files {
       margin-top: 30px;
@@ -144,63 +134,69 @@
       text-align: center;
       width: 200px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      position: relative; /* Needed for absolute positioning if we were to hover */
     }
     
     .image-container {
       position: relative;
       display: block;
-      margin: 10px auto;
+      margin: 10px auto 5px auto; /* Reduced margin below image */
     }
     
     .image-container img {
       display: block;
       width: 100%; 
-      height: 200px; /* Increased image height */
+      height: 200px;
       object-fit: cover; 
       border: 1px solid #666;
       border-radius: 5px;
     }
     
-    /* NEW: Styles for the button group below the photo */
+    /* MODIFIED: Action Buttons - Icon Style */
     .action-buttons {
       display: flex;
-      justify-content: space-around;
-      margin-top: 10px;
+      justify-content: flex-end; /* Align icons to the right */
+      gap: 10px; /* Space between icons */
+      margin-top: 5px;
+      padding-top: 5px;
+      border-top: 1px solid #555; /* Subtle separator line */
     }
 
-    .action-buttons button, .action-buttons a {
-      padding: 8px 10px;
-      font-size: 14px;
-      width: auto; /* Allow buttons to size based on content */
-      margin: 0;
-      border-radius: 4px;
-      text-decoration: none; /* For the download link */
-      display: inline-block;
-      text-align: center;
-    }
-
-    /* Download button style */
-    .download-btn {
-        background-color: #007bff;
-        color: white;
-    }
-    .download-btn:hover {
-        background-color: #0056b3;
-    }
-    
-    /* Delete button style */
-    .delete-btn-below {
-      background-color: #ff4444;
-      color: white;
+    /* Base style for all action icons (buttons and links) */
+    .action-icon {
+      padding: 5px;
+      font-size: 18px; /* Icon size */
+      background: none;
       border: none;
-    }
-    
-    .delete-btn-below:hover {
-      background-color: #cc0000;
+      cursor: pointer;
+      color: #ccc; /* Default icon color */
+      text-decoration: none; /* For the download link */
+      line-height: 1;
+      width: auto;
+      transition: color 0.2s;
     }
 
-    /* REMOVED .delete-btn: The old button that floated over the image */
+    .action-icon:hover {
+      color: #f7a83d; /* Highlight on hover */
+    }
     
+    /* Specific styles for Delete button */
+    .delete-icon {
+      color: #ff4444; /* Keep delete color subtle */
+    }
+    .delete-icon:hover {
+        color: #cc0000;
+    }
+
+    /* Info text for the upload details */
+    .photo-info {
+        text-align: left;
+        font-size: 14px;
+        color: #ddd;
+        margin-bottom: 5px;
+    }
+
+    /* Storage Indicator Styles (Unchanged) */
     .storage-indicator {
       background-color: #4c4c4c;
       border: 1px solid #666;
@@ -210,7 +206,7 @@
       max-width: 400px;
       color: #ccc;
     }
-
+    
     .storage-bar {
       width: 100%;
       height: 20px;
@@ -225,7 +221,7 @@
       background-color: #4CAF50;
       transition: width 0.3s ease;
     }
-
+    
     .storage-fill.warning {
       background-color: #ff9800;
     }
@@ -469,7 +465,7 @@
     // --- END NEW HELPER FUNCTION ---
 
 
-    // --- LIST FILES FUNCTION (MODIFIED RENDERING) ---
+    // --- LIST FILES FUNCTION (MODIFIED RENDERING FOR ICONS) ---
     async function listUploadedFiles() {
       const filterSelect = document.getElementById("user-filter");
       const selectedFilter = filterSelect ? filterSelect.value : "all";
@@ -527,7 +523,6 @@
         return timestampB - timestampA;
       });
 
-      // MODIFIED: Corrected heading text from "All Photos" to "All Photos" 
       container.innerHTML = `<h3>${selectedFilter === "all" ? "All" : selectedFilter}'s Photos</h3>`;
       const ul = document.createElement("ul");
       
@@ -546,10 +541,16 @@
 
         const li = document.createElement("li");
 
-        li.innerHTML = `
+        // --- NEW: Photo Info Block ---
+        const infoDiv = document.createElement("div");
+        infoDiv.className = "photo-info";
+        infoDiv.innerHTML = `
           Uploaded by: <strong>${file.guestFolder}</strong><br>
-          Date: ${dateStr.split(',')[0]}<br>
+          Date: ${dateStr.split(',')[0]}
         `;
+        li.appendChild(infoDiv);
+        // --- End Photo Info Block ---
+
 
         const imageContainer = document.createElement("div");
         imageContainer.className = "image-container";
@@ -566,23 +567,24 @@
         imageContainer.appendChild(link);
         li.appendChild(imageContainer);
         
-        // --- NEW/MODIFIED: Action Buttons Below Photo ---
+        // --- MODIFIED: Action Icons Below Photo ---
         const actionDiv = document.createElement("div");
         actionDiv.className = "action-buttons";
 
-        // 1. Download Button (Link) - Available to everyone
+        // 1. Download Icon (Link)
         const downloadLink = document.createElement("a");
         downloadLink.href = publicUrl;
-        downloadLink.download = file.name; // Forces browser to download instead of opening
-        downloadLink.className = "download-btn";
-        downloadLink.textContent = "⬇️ Download";
+        downloadLink.download = file.name;
+        downloadLink.className = "action-icon download-icon";
+        downloadLink.innerHTML = "⬇️"; // Unicode down arrow icon
+        downloadLink.title = "Download Photo";
         actionDiv.appendChild(downloadLink);
 
-        // 2. Delete Button - Only available to the uploader
+        // 2. Delete Icon (Button) - Only available to the uploader
         if (file.guestFolder === guestName) {
           const deleteBtn = document.createElement("button");
-          deleteBtn.className = "delete-btn-below"; // Using the new class
-          deleteBtn.innerHTML = "🗑️ Delete";
+          deleteBtn.className = "action-icon delete-icon"; 
+          deleteBtn.innerHTML = "🗑️"; // Unicode trash can icon
           deleteBtn.title = "Delete photo";
           deleteBtn.onclick = (e) => {
             e.preventDefault();
@@ -592,7 +594,7 @@
         }
         
         li.appendChild(actionDiv);
-        // --- END Action Buttons ---
+        // --- END Action Icons ---
 
         ul.appendChild(li);
       });
